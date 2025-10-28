@@ -1,0 +1,85 @@
+version: "3.8"
+
+services:
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: blog-app-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+    networks:
+      - blog-network
+
+  # Auth Service Database
+  auth-db:
+    image: postgres:15
+    container_name: blog-app-auth-db
+    environment:
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_password
+      POSTGRES_DB: auth_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    networks:
+      - blog-network
+
+  # Posts Service Database
+  posts-db:
+    image: postgres:15
+    container_name: blog-app-posts-db
+    environment:
+      POSTGRES_USER: posts_user
+      POSTGRES_PASSWORD: posts_password
+      POSTGRES_DB: posts_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - posts-db-data:/var/lib/postgresql/data
+    networks:
+      - blog-network
+
+  # Comments Service Database
+  comments-db:
+    image: postgres:15
+    container_name: blog-app-comments-db
+    environment:
+      POSTGRES_USER: comments_user
+      POSTGRES_PASSWORD: comments_password
+      POSTGRES_DB: comments_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - comments-db-data:/var/lib/postgresql/data
+    networks:
+      - blog-network
+
+  # Moderation Service Database
+  moderation-db:
+    image: postgres:15
+    container_name: blog-app-moderation-db
+    environment:
+      POSTGRES_USER: moderation_user
+      POSTGRES_PASSWORD: moderation_password
+      POSTGRES_DB: moderation_db
+    ports:
+      - "5436:5432"
+    volumes:
+      - moderation-db-data:/var/lib/postgresql/data
+    networks:
+      - blog-network
+
+volumes:
+  auth-db-data:
+  posts-db-data:
+  comments-db-data:
+  moderation-db-data:
+
+networks:
+  blog-network:
+    driver: bridge
