@@ -17,15 +17,15 @@ importers:
 
   apps/auth:
     dependencies:
+      '@blog/shared-event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
       '@blog/shared-logger':
         specifier: workspace:*
         version: link:../../packages/logger
       '@blog/shared-middleware':
         specifier: workspace:*
         version: link:../../packages/middleware
-      '@blog/shared-rabbitmq':
-        specifier: workspace:*
-        version: link:../../packages/rabbitmq
       '@blog/shared-types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -111,15 +111,15 @@ importers:
 
   apps/comments:
     dependencies:
+      '@blog/shared-event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
       '@blog/shared-logger':
         specifier: workspace:*
         version: link:../../packages/logger
       '@blog/shared-middleware':
         specifier: workspace:*
         version: link:../../packages/middleware
-      '@blog/shared-rabbitmq':
-        specifier: workspace:*
-        version: link:../../packages/rabbitmq
       '@blog/shared-types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -196,15 +196,15 @@ importers:
 
   apps/moderation:
     dependencies:
+      '@blog/shared-event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
       '@blog/shared-logger':
         specifier: workspace:*
         version: link:../../packages/logger
       '@blog/shared-middleware':
         specifier: workspace:*
         version: link:../../packages/middleware
-      '@blog/shared-rabbitmq':
-        specifier: workspace:*
-        version: link:../../packages/rabbitmq
       '@blog/shared-types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -281,15 +281,15 @@ importers:
 
   apps/posts:
     dependencies:
+      '@blog/shared-event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
       '@blog/shared-logger':
         specifier: workspace:*
         version: link:../../packages/logger
       '@blog/shared-middleware':
         specifier: workspace:*
         version: link:../../packages/middleware
-      '@blog/shared-rabbitmq':
-        specifier: workspace:*
-        version: link:../../packages/rabbitmq
       '@blog/shared-types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -366,15 +366,15 @@ importers:
 
   apps/query:
     dependencies:
+      '@blog/shared-event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
       '@blog/shared-logger':
         specifier: workspace:*
         version: link:../../packages/logger
       '@blog/shared-middleware':
         specifier: workspace:*
         version: link:../../packages/middleware
-      '@blog/shared-rabbitmq':
-        specifier: workspace:*
-        version: link:../../packages/rabbitmq
       '@blog/shared-types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -481,6 +481,28 @@ importers:
         version: 3.4.18
       typescript:
         specifier: ^5.2.2
+        version: 5.9.3
+
+  packages/event-bus:
+    dependencies:
+      '@nestjs/common':
+        specifier: ^10.0.0
+        version: 10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.2)
+      '@nestjs/config':
+        specifier: ^3.0.0
+        version: 3.3.0(@nestjs/common@10.4.20)(rxjs@7.8.2)
+      amqplib:
+        specifier: ^0.10.9
+        version: 0.10.9
+    devDependencies:
+      '@types/amqplib':
+        specifier: ^0.10.1
+        version: 0.10.8
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.23
+      typescript:
+        specifier: ^5.0.0
         version: 5.9.3
 
   packages/logger:

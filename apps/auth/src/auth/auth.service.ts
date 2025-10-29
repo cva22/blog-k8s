@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException, OnModuleInit } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
+import { EventBusService, BlogEvent } from '@blog/shared-event-bus-client';
 import { AppLogger } from '@blog/shared-logger';
 import { RequestContext } from '@blog/shared-types';
 import * as bcrypt from 'bcrypt';
@@ -11,7 +11,7 @@ import * as bcrypt from 'bcrypt';
 export class AuthService implements OnModuleInit {
   constructor(
     private prisma: PrismaService,
-    private rabbitMQService: RabbitMQService,
+    private eventBusService: EventBusService,
     private appLogger: AppLogger,
   ) {
     this.appLogger.setContext(AuthService.name);
@@ -46,7 +46,7 @@ export class AuthService implements OnModuleInit {
     });
 
     // Publish user registered event
-    const event = await this.rabbitMQService.createEvent(
+    const event = await this.eventBusService.createEvent(
       'user.registered',
       {
         userId: user.id,
@@ -55,7 +55,7 @@ export class AuthService implements OnModuleInit {
       },
       'auth',
     );
-    await this.rabbitMQService.publishEvent(event);
+    await this.eventBusService.publishEvent(event);
 
     return {
       id: user.id,
@@ -92,7 +92,7 @@ export class AuthService implements OnModuleInit {
     });
 
     // Publish user logged in event
-    const event = await this.rabbitMQService.createEvent(
+    const event = await this.eventBusService.createEvent(
       'user.logged_in',
       {
         userId: user.id,
@@ -101,7 +101,7 @@ export class AuthService implements OnModuleInit {
       },
       'auth',
     );
-    await this.rabbitMQService.publishEvent(event);
+    await this.eventBusService.publishEvent(event);
 
     return {
       token,
@@ -133,7 +133,7 @@ export class AuthService implements OnModuleInit {
 
     if (session) {
       // Publish user logged out event
-      const event = await this.rabbitMQService.createEvent(
+      const event = await this.eventBusService.createEvent(
         'user.logged_out',
         {
           userId: session.userId,
@@ -141,7 +141,7 @@ export class AuthService implements OnModuleInit {
         },
         'auth',
       );
-      await this.rabbitMQService.publishEvent(event);
+      await this.eventBusService.publishEvent(event);
     }
 
     await this.prisma.session.deleteMany({

@@ -21,7 +21,7 @@
     "class-validator": "^0.14.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
-    "@blog/shared-rabbitmq": "workspace:*",
+    "@blog/shared-event-bus-client": "workspace:*",
     "@blog/shared-logger": "workspace:*",
     "@blog/shared-types": "workspace:*",
     "@blog/shared-middleware": "workspace:*",

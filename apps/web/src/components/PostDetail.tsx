@@ -1,5 +1,13 @@
 import CommentSection from './CommentSection'
 
+interface Comment {
+    id: string
+    postId: string
+    content: string
+    authorId: string
+    createdAt: string
+}
+
 interface Post {
     id: string
     title: string

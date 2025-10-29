@@ -1,14 +1,14 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateModerationActionDto } from './dto/create-moderation-action.dto';
-import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
+import { EventBusService, BlogEvent } from '@blog/shared-event-bus-client';
 import { AppLogger } from '@blog/shared-logger';
 
 @Injectable()
 export class ModerationService implements OnModuleInit {
   constructor(
     private prisma: PrismaService,
-    private rabbitMQService: RabbitMQService,
+    private eventBusService: EventBusService,
     private appLogger: AppLogger,
   ) {
     this.appLogger.setContext(ModerationService.name);
@@ -16,7 +16,7 @@ export class ModerationService implements OnModuleInit {
 
   async onModuleInit() {
     // Subscribe to events that moderation service needs to handle
-    await this.rabbitMQService.subscribeToEvents(
+    await this.eventBusService.subscribeToEvents(
       'moderation',
       [
         'user.registered',
@@ -103,12 +103,12 @@ export class ModerationService implements OnModuleInit {
         return moderationAction; // No event to publish
     }
 
-    const event = await this.rabbitMQService.createEvent(
+    const event = await this.eventBusService.createEvent(
       eventType,
       eventData,
       'moderation',
     );
-    await this.rabbitMQService.publishEvent(event);
+    await this.eventBusService.publishEvent(event);
 
     return moderationAction;
   }

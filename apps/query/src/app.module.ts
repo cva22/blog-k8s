@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { QueryModule } from './query/query.module';
-import { RabbitMQModule } from '@blog/shared-rabbitmq';
+import { EventBusModule } from '@blog/shared-event-bus-client';
 
 @Module({
   imports: [
@@ -10,7 +10,7 @@ import { RabbitMQModule } from '@blog/shared-rabbitmq';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    RabbitMQModule,
+    EventBusModule,
     HttpModule, 
     QueryModule
   ],

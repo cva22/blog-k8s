@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
-import { RabbitMQModule } from '@blog/shared-rabbitmq';
+import { EventBusModule } from '@blog/shared-event-bus-client';
 
 @Module({
   imports: [
@@ -10,7 +10,7 @@ import { RabbitMQModule } from '@blog/shared-rabbitmq';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    RabbitMQModule,
+    EventBusModule,
     PrismaModule,
     AuthModule,
   ],

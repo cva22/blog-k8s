@@ -1,0 +1,26 @@
+{
+  "name": "@blog/shared-event-bus-client",
+  "version": "1.0.0",
+  "description": "Event bus client package - RabbitMQ client wrapper for blog microservices. This package contains client logic to connect to and interact with the event-bus service (RabbitMQ broker).",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/config": "^3.0.0",
+    "amqplib": "^0.10.9"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.1",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/config": "^3.0.0"
+  }
+}

@@ -23,8 +23,9 @@ A blog application built with **event-driven microservices architecture** using 
        └───────────────────┼───────────────────┘
                            │
                    ┌─────────────┐
-                   │  RabbitMQ   │
-                   │   Events    │
+                   │  Event-Bus  │
+                   │  Service    │
+                   │ (RabbitMQ)  │
                    └─────────────┘
                            │
        ┌───────────────────┼───────────────────┐
@@ -73,7 +74,7 @@ A blog application built with **event-driven microservices architecture** using 
 
 ### Infrastructure
 
-- **RabbitMQ** (Port 5672)
+- **Event-Bus Service** (RabbitMQ) - Port 5672 (AMQP), 15672 (Management UI)
 
   - Message broker for event-driven communication
   - Management UI: http://localhost:15672 (admin/admin)
@@ -132,7 +133,7 @@ cd blog-k8s
 # Install dependencies
 pnpm install
 
-# Start Docker services (PostgreSQL databases and RabbitMQ)
+# Start Docker services (PostgreSQL databases and event-bus service)
 docker-compose up -d
 
 # Generate Prisma clients
@@ -153,7 +154,7 @@ make dev
 - **Comments Service**: http://localhost:3003
 - **Moderation Service**: http://localhost:3004
 - **Query Service**: http://localhost:3005
-- **RabbitMQ Management**: http://localhost:15672 (admin/admin)
+- **Event-Bus Management UI**: http://localhost:15672 (admin/admin)
 
 ## 🔧 Development
 
@@ -161,7 +162,9 @@ make dev
 
 1. **Adding New Events**:
 
-   - Define event types in `shared/rabbitmq/src/events/event.types.ts`
+   - Define event types in `packages/event-bus-client/src/events/event.types.ts`
+   - Event-bus service (RabbitMQ) runs as a standalone service (configured in docker-compose.yml)
+   - Services connect via the `@blog/shared-event-bus-client` client package
    - Update event routing configuration
    - Implement event handlers in relevant services
 

@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
+import { EventBusService, BlogEvent } from '@blog/shared-event-bus-client';
 import { AppLogger } from '@blog/shared-logger';
 import { firstValueFrom } from 'rxjs';
 
@@ -11,7 +11,7 @@ export class QueryService implements OnModuleInit {
 
   constructor(
     private httpService: HttpService,
-    private rabbitMQService: RabbitMQService,
+    private eventBusService: EventBusService,
     private appLogger: AppLogger,
   ) {
     this.appLogger.setContext(QueryService.name);
@@ -19,7 +19,7 @@ export class QueryService implements OnModuleInit {
 
   async onModuleInit() {
     // Subscribe to events that query service needs to handle for cache invalidation
-    await this.rabbitMQService.subscribeToEvents(
+    await this.eventBusService.subscribeToEvents(
       'query',
       [
         'post.created',
@@ -100,7 +100,7 @@ export class QueryService implements OnModuleInit {
   }
 
   private async publishCacheInvalidationEvent(cacheKey: string, reason: string) {
-    const event = await this.rabbitMQService.createEvent(
+    const event = await this.eventBusService.createEvent(
       'cache.invalidated',
       {
         cacheKey,
@@ -108,7 +108,7 @@ export class QueryService implements OnModuleInit {
       },
       'query',
     );
-    await this.rabbitMQService.publishEvent(event);
+    await this.eventBusService.publishEvent(event);
   }
 
   private readonly POSTS_SERVICE_URL = process.env.POSTS_SERVICE_URL || 'http://localhost:3002';

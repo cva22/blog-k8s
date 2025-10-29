@@ -2,14 +2,14 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
-import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
+import { EventBusService, BlogEvent } from '@blog/shared-event-bus-client';
 import { AppLogger } from '@blog/shared-logger';
 
 @Injectable()
 export class CommentsService implements OnModuleInit {
   constructor(
     private prisma: PrismaService,
-    private rabbitMQService: RabbitMQService,
+    private eventBusService: EventBusService,
     private appLogger: AppLogger,
   ) {
     this.appLogger.setContext(CommentsService.name);
@@ -17,7 +17,7 @@ export class CommentsService implements OnModuleInit {
 
   async onModuleInit() {
     // Subscribe to events that comments service needs to handle
-    await this.rabbitMQService.subscribeToEvents(
+    await this.eventBusService.subscribeToEvents(
       'comments',
       [
         'user.registered',
@@ -89,7 +89,7 @@ export class CommentsService implements OnModuleInit {
     });
 
     // Publish comment created event
-    const event = await this.rabbitMQService.createEvent(
+    const event = await this.eventBusService.createEvent(
       'comment.created',
       {
         commentId: comment.id,
@@ -99,7 +99,7 @@ export class CommentsService implements OnModuleInit {
       },
       'comments',
     );
-    await this.rabbitMQService.publishEvent(event);
+    await this.eventBusService.publishEvent(event);
 
     return comment;
   }
@@ -134,7 +134,7 @@ export class CommentsService implements OnModuleInit {
     });
 
     // Publish comment updated event
-    const event = await this.rabbitMQService.createEvent(
+    const event = await this.eventBusService.createEvent(
       'comment.updated',
       {
         commentId: comment.id,
@@ -144,7 +144,7 @@ export class CommentsService implements OnModuleInit {
       },
       'comments',
     );
-    await this.rabbitMQService.publishEvent(event);
+    await this.eventBusService.publishEvent(event);
 
     return comment;
   }
@@ -163,7 +163,7 @@ export class CommentsService implements OnModuleInit {
     });
 
     // Publish comment deleted event
-    const event = await this.rabbitMQService.createEvent(
+    const event = await this.eventBusService.createEvent(
       'comment.deleted',
       {
         commentId: comment.id,
@@ -172,7 +172,7 @@ export class CommentsService implements OnModuleInit {
       },
       'comments',
     );
-    await this.rabbitMQService.publishEvent(event);
+    await this.eventBusService.publishEvent(event);
 
     return { message: 'Comment deleted successfully' };
   }

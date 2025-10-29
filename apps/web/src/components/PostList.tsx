@@ -4,6 +4,14 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import axios from 'axios'
 
+interface Comment {
+    id: string
+    postId: string
+    content: string
+    authorId: string
+    createdAt: string
+}
+
 interface Post {
     id: string
     title: string

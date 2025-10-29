@@ -1,18 +1,27 @@
 version: "3.8"
 
 services:
-  # RabbitMQ
-  rabbitmq:
+  # Event Bus Service - Standalone RabbitMQ message broker
+  event-bus:
     image: rabbitmq:3-management
-    container_name: blog-app-rabbitmq
+    container_name: blog-app-event-bus
+    hostname: event-bus
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672" # AMQP port
+      - "15672:15672" # Management UI port
     environment:
       - RABBITMQ_DEFAULT_USER=admin
       - RABBITMQ_DEFAULT_PASS=admin
+    volumes:
+      - event-bus-data:/var/lib/rabbitmq
     networks:
       - blog-network
+    restart: unless-stopped
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   # Auth Service Database
   auth-db:
@@ -75,6 +84,7 @@ services:
       - blog-network
 
 volumes:
+  event-bus-data:
   auth-db-data:
   posts-db-data:
   comments-db-data:

@@ -2,14 +2,14 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
+import { EventBusService, BlogEvent } from '@blog/shared-event-bus-client';
 import { AppLogger } from '@blog/shared-logger';
 
 @Injectable()
 export class PostsService implements OnModuleInit {
   constructor(
     private prisma: PrismaService,
-    private rabbitMQService: RabbitMQService,
+    private eventBusService: EventBusService,
     private appLogger: AppLogger,
   ) {
     this.appLogger.setContext(PostsService.name);
@@ -17,7 +17,7 @@ export class PostsService implements OnModuleInit {
 
   async onModuleInit() {
     // Subscribe to events that posts service needs to handle
-    await this.rabbitMQService.subscribeToEvents(
+    await this.eventBusService.subscribeToEvents(
       'posts',
       [
         'user.registered',
@@ -85,7 +85,7 @@ export class PostsService implements OnModuleInit {
     });
 
     // Publish post created event
-    const event = await this.rabbitMQService.createEvent(
+    const event = await this.eventBusService.createEvent(
       'post.created',
       {
         postId: post.id,
@@ -96,7 +96,7 @@ export class PostsService implements OnModuleInit {
       },
       'posts',
     );
-    await this.rabbitMQService.publishEvent(event);
+    await this.eventBusService.publishEvent(event);
 
     return post;
   }
@@ -131,7 +131,7 @@ export class PostsService implements OnModuleInit {
     });
 
     // Publish post updated event
-    const event = await this.rabbitMQService.createEvent(
+    const event = await this.eventBusService.createEvent(
       'post.updated',
       {
         postId: post.id,
@@ -142,11 +142,11 @@ export class PostsService implements OnModuleInit {
       },
       'posts',
     );
-    await this.rabbitMQService.publishEvent(event);
+    await this.eventBusService.publishEvent(event);
 
     // If post was just published, publish a separate event
     if (!existingPost.published && post.published) {
-      const publishEvent = await this.rabbitMQService.createEvent(
+      const publishEvent = await this.eventBusService.createEvent(
         'post.published',
         {
           postId: post.id,
@@ -155,7 +155,7 @@ export class PostsService implements OnModuleInit {
         },
         'posts',
       );
-      await this.rabbitMQService.publishEvent(publishEvent);
+      await this.eventBusService.publishEvent(publishEvent);
     }
 
     return post;
@@ -175,7 +175,7 @@ export class PostsService implements OnModuleInit {
     });
 
     // Publish post deleted event
-    const event = await this.rabbitMQService.createEvent(
+    const event = await this.eventBusService.createEvent(
       'post.deleted',
       {
         postId: post.id,
@@ -183,7 +183,7 @@ export class PostsService implements OnModuleInit {
       },
       'posts',
     );
-    await this.rabbitMQService.publishEvent(event);
+    await this.eventBusService.publishEvent(event);
 
     return { message: 'Post deleted successfully' };
   }
