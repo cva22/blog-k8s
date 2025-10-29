@@ -1,0 +1,24 @@
+{
+  "name": "@blog/shared-logger",
+  "version": "1.0.0",
+  "description": "Shared logger package for blog microservices",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "winston": "^3.11.0",
+    "uuid": "^9.0.1",
+    "@blog/shared-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.7",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^10.0.0"
+  }
+}

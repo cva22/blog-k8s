@@ -1,18 +1,21 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
+import { AppLogger } from '@blog/shared-logger';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class QueryService implements OnModuleInit {
-  private readonly logger = new Logger(QueryService.name);
   private postsCache = new Map<string, any>();
   private commentsCache = new Map<string, any[]>();
 
   constructor(
     private httpService: HttpService,
     private rabbitMQService: RabbitMQService,
-  ) {}
+    private appLogger: AppLogger,
+  ) {
+    this.appLogger.setContext(QueryService.name);
+  }
 
   async onModuleInit() {
     // Subscribe to events that query service needs to handle for cache invalidation
@@ -37,37 +40,37 @@ export class QueryService implements OnModuleInit {
   private async handleEvent(event: BlogEvent) {
     switch (event.type) {
       case 'post.created':
-        this.logger.log('Post created, invalidating cache:', event.data.postId);
+        this.appLogger.logServiceCall('query', 'Post created, invalidating cache', { postId: event.data.postId });
         this.invalidatePostCache(event.data.postId);
         break;
       case 'post.updated':
-        this.logger.log('Post updated, invalidating cache:', event.data.postId);
+        this.appLogger.logServiceCall('query', 'Post updated, invalidating cache', { postId: event.data.postId });
         this.invalidatePostCache(event.data.postId);
         break;
       case 'post.deleted':
-        this.logger.log('Post deleted, invalidating cache:', event.data.postId);
+        this.appLogger.logServiceCall('query', 'Post deleted, invalidating cache', { postId: event.data.postId });
         this.invalidatePostCache(event.data.postId);
         break;
       case 'post.published':
-        this.logger.log('Post published, invalidating cache:', event.data.postId);
+        this.appLogger.logServiceCall('query', 'Post published, invalidating cache', { postId: event.data.postId });
         this.invalidatePostCache(event.data.postId);
         break;
       case 'comment.created':
-        this.logger.log('Comment created, invalidating cache for post:', event.data.postId);
+        this.appLogger.logServiceCall('query', 'Comment created, invalidating cache for post', { postId: event.data.postId });
         this.invalidateCommentsCache(event.data.postId);
         break;
       case 'comment.updated':
-        this.logger.log('Comment updated, invalidating cache for post:', event.data.postId);
+        this.appLogger.logServiceCall('query', 'Comment updated, invalidating cache for post', { postId: event.data.postId });
         this.invalidateCommentsCache(event.data.postId);
         break;
       case 'comment.deleted':
-        this.logger.log('Comment deleted, invalidating cache for post:', event.data.postId);
+        this.appLogger.logServiceCall('query', 'Comment deleted, invalidating cache for post', { postId: event.data.postId });
         this.invalidateCommentsCache(event.data.postId);
         break;
       case 'content.flagged':
       case 'content.approved':
       case 'content.rejected':
-        this.logger.log('Content moderation event, invalidating related caches:', event.data);
+        this.appLogger.logServiceCall('query', 'Content moderation event, invalidating related caches', { eventData: event.data });
         if (event.data.contentType === 'post') {
           this.invalidatePostCache(event.data.contentId);
         } else if (event.data.contentType === 'comment') {
@@ -77,7 +80,7 @@ export class QueryService implements OnModuleInit {
         }
         break;
       default:
-        this.logger.log('Unhandled event in query service:', event.type);
+        this.appLogger.logServiceCall('query', 'Unhandled event in query service', { eventType: event.type });
     }
   }
 
@@ -120,7 +123,7 @@ export class QueryService implements OnModuleInit {
       let post, comments;
 
       if (cachedPost && cachedComments) {
-        this.logger.log('Returning cached data for post:', postId);
+        this.appLogger.logServiceCall('query', 'Returning cached data for post', { postId });
         return {
           ...cachedPost,
           comments: cachedComments,
@@ -154,7 +157,7 @@ export class QueryService implements OnModuleInit {
         comments,
       };
     } catch (error) {
-      this.logger.error('Error fetching post with comments:', error);
+      this.appLogger.logServiceError('query', 'Error fetching post with comments', { error: error.message });
       throw error;
     }
   }
@@ -193,7 +196,7 @@ export class QueryService implements OnModuleInit {
 
       return postsWithComments;
     } catch (error) {
-      this.logger.error('Error fetching all posts with comments:', error);
+      this.appLogger.logServiceError('query', 'Error fetching all posts with comments', { error: error.message });
       throw error;
     }
   }

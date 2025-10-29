@@ -3,13 +3,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
+import { AppLogger } from '@blog/shared-logger';
 
 @Injectable()
 export class PostsService implements OnModuleInit {
   constructor(
     private prisma: PrismaService,
     private rabbitMQService: RabbitMQService,
-  ) {}
+    private appLogger: AppLogger,
+  ) {
+    this.appLogger.setContext(PostsService.name);
+  }
 
   async onModuleInit() {
     // Subscribe to events that posts service needs to handle
@@ -33,40 +37,40 @@ export class PostsService implements OnModuleInit {
   private async handleEvent(event: BlogEvent) {
     switch (event.type) {
       case 'user.registered':
-        console.log('New user registered, posts service notified:', event.data);
+        this.appLogger.logServiceCall('posts', 'New user registered, posts service notified', { eventData: event.data });
         break;
       case 'user.logged_in':
-        console.log('User logged in, posts service notified:', event.data);
+        this.appLogger.logServiceCall('posts', 'User logged in, posts service notified', { eventData: event.data });
         break;
       case 'user.logged_out':
-        console.log('User logged out, posts service notified:', event.data);
+        this.appLogger.logServiceCall('posts', 'User logged out, posts service notified', { eventData: event.data });
         break;
       case 'comment.created':
-        console.log('Comment created for post:', event.data);
+        this.appLogger.logServiceCall('posts', 'Comment created for post', { eventData: event.data });
         break;
       case 'comment.updated':
-        console.log('Comment updated for post:', event.data);
+        this.appLogger.logServiceCall('posts', 'Comment updated for post', { eventData: event.data });
         break;
       case 'comment.deleted':
-        console.log('Comment deleted for post:', event.data);
+        this.appLogger.logServiceCall('posts', 'Comment deleted for post', { eventData: event.data });
         break;
       case 'content.flagged':
         if (event.data.contentType === 'post') {
-          console.log('Post flagged:', event.data);
+          this.appLogger.logServiceCall('posts', 'Post flagged', { eventData: event.data });
         }
         break;
       case 'content.approved':
         if (event.data.contentType === 'post') {
-          console.log('Post approved:', event.data);
+          this.appLogger.logServiceCall('posts', 'Post approved', { eventData: event.data });
         }
         break;
       case 'content.rejected':
         if (event.data.contentType === 'post') {
-          console.log('Post rejected:', event.data);
+          this.appLogger.logServiceCall('posts', 'Post rejected', { eventData: event.data });
         }
         break;
       default:
-        console.log('Unhandled event in posts service:', event.type);
+        this.appLogger.logServiceCall('posts', 'Unhandled event in posts service', { eventType: event.type });
     }
   }
 

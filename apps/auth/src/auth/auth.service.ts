@@ -1,33 +1,36 @@
-import { Injectable, UnauthorizedException, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
+import { AppLogger } from '@blog/shared-logger';
+import { RequestContext } from '@blog/shared-types';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
-  private readonly logger = new Logger(AuthService.name);
-
   constructor(
     private prisma: PrismaService,
     private rabbitMQService: RabbitMQService,
-  ) {}
+    private appLogger: AppLogger,
+  ) {
+    this.appLogger.setContext(AuthService.name);
+  }
 
   async onModuleInit() {
     // Don't try to subscribe to events immediately
     // Let the service start first, then handle events lazily
-    this.logger.log('Auth service initialized');
+    this.appLogger.logServiceCall('auth', 'Auth service initialized');
   }
 
   private async handleEvent(event: BlogEvent) {
     switch (event.type) {
       case 'user.logged_out':
         // Handle logout event if needed
-        console.log('User logged out event received:', event.data);
+        this.appLogger.logServiceCall('auth', 'User logged out event received', { eventData: event.data });
         break;
       default:
-        console.log('Unhandled event in auth service:', event.type);
+        this.appLogger.logServiceCall('auth', 'Unhandled event in auth service', { eventType: event.type });
     }
   }
 

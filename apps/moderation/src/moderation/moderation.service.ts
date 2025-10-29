@@ -2,13 +2,17 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateModerationActionDto } from './dto/create-moderation-action.dto';
 import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
+import { AppLogger } from '@blog/shared-logger';
 
 @Injectable()
 export class ModerationService implements OnModuleInit {
   constructor(
     private prisma: PrismaService,
     private rabbitMQService: RabbitMQService,
-  ) {}
+    private appLogger: AppLogger,
+  ) {
+    this.appLogger.setContext(ModerationService.name);
+  }
 
   async onModuleInit() {
     // Subscribe to events that moderation service needs to handle
@@ -29,27 +33,27 @@ export class ModerationService implements OnModuleInit {
   private async handleEvent(event: BlogEvent) {
     switch (event.type) {
       case 'user.registered':
-        console.log('New user registered, moderation service notified:', event.data);
+        this.appLogger.logServiceCall('moderation', 'New user registered, moderation service notified', { eventData: event.data });
         break;
       case 'post.created':
-        console.log('New post created, moderation service notified:', event.data);
+        this.appLogger.logServiceCall('moderation', 'New post created, moderation service notified', { eventData: event.data });
         // Could implement automatic flagging for review
         break;
       case 'post.updated':
-        console.log('Post updated, moderation service notified:', event.data);
+        this.appLogger.logServiceCall('moderation', 'Post updated, moderation service notified', { eventData: event.data });
         break;
       case 'post.published':
-        console.log('Post published, moderation service notified:', event.data);
+        this.appLogger.logServiceCall('moderation', 'Post published, moderation service notified', { eventData: event.data });
         break;
       case 'comment.created':
-        console.log('New comment created, moderation service notified:', event.data);
+        this.appLogger.logServiceCall('moderation', 'New comment created, moderation service notified', { eventData: event.data });
         // Could implement automatic flagging for review
         break;
       case 'comment.updated':
-        console.log('Comment updated, moderation service notified:', event.data);
+        this.appLogger.logServiceCall('moderation', 'Comment updated, moderation service notified', { eventData: event.data });
         break;
       default:
-        console.log('Unhandled event in moderation service:', event.type);
+        this.appLogger.logServiceCall('moderation', 'Unhandled event in moderation service', { eventType: event.type });
     }
   }
 

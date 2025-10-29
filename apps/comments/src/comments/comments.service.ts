@@ -3,13 +3,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
+import { AppLogger } from '@blog/shared-logger';
 
 @Injectable()
 export class CommentsService implements OnModuleInit {
   constructor(
     private prisma: PrismaService,
     private rabbitMQService: RabbitMQService,
-  ) {}
+    private appLogger: AppLogger,
+  ) {
+    this.appLogger.setContext(CommentsService.name);
+  }
 
   async onModuleInit() {
     // Subscribe to events that comments service needs to handle
@@ -34,44 +38,44 @@ export class CommentsService implements OnModuleInit {
   private async handleEvent(event: BlogEvent) {
     switch (event.type) {
       case 'user.registered':
-        console.log('New user registered, comments service notified:', event.data);
+        this.appLogger.logServiceCall('comments', 'New user registered, comments service notified', { eventData: event.data });
         break;
       case 'user.logged_in':
-        console.log('User logged in, comments service notified:', event.data);
+        this.appLogger.logServiceCall('comments', 'User logged in, comments service notified', { eventData: event.data });
         break;
       case 'user.logged_out':
-        console.log('User logged out, comments service notified:', event.data);
+        this.appLogger.logServiceCall('comments', 'User logged out, comments service notified', { eventData: event.data });
         break;
       case 'post.created':
-        console.log('New post created, comments service notified:', event.data);
+        this.appLogger.logServiceCall('comments', 'New post created, comments service notified', { eventData: event.data });
         break;
       case 'post.updated':
-        console.log('Post updated, comments service notified:', event.data);
+        this.appLogger.logServiceCall('comments', 'Post updated, comments service notified', { eventData: event.data });
         break;
       case 'post.deleted':
-        console.log('Post deleted, comments service notified:', event.data);
+        this.appLogger.logServiceCall('comments', 'Post deleted, comments service notified', { eventData: event.data });
         // Could implement cascade delete of comments here
         break;
       case 'post.published':
-        console.log('Post published, comments service notified:', event.data);
+        this.appLogger.logServiceCall('comments', 'Post published, comments service notified', { eventData: event.data });
         break;
       case 'content.flagged':
         if (event.data.contentType === 'comment') {
-          console.log('Comment flagged:', event.data);
+          this.appLogger.logServiceCall('comments', 'Comment flagged', { eventData: event.data });
         }
         break;
       case 'content.approved':
         if (event.data.contentType === 'comment') {
-          console.log('Comment approved:', event.data);
+          this.appLogger.logServiceCall('comments', 'Comment approved', { eventData: event.data });
         }
         break;
       case 'content.rejected':
         if (event.data.contentType === 'comment') {
-          console.log('Comment rejected:', event.data);
+          this.appLogger.logServiceCall('comments', 'Comment rejected', { eventData: event.data });
         }
         break;
       default:
-        console.log('Unhandled event in comments service:', event.type);
+        this.appLogger.logServiceCall('comments', 'Unhandled event in comments service', { eventType: event.type });
     }
   }
 
