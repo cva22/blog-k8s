@@ -1,27 +1,121 @@
-# Blog App - Microservices Architecture
+# Blog App - Event-Driven Microservices Architecture
 
-A blog application built with microservices architecture using Node.js, PostgreSQL, Prisma, RabbitMQ, and Next.js.
+A blog application built with **event-driven microservices architecture** using Node.js, PostgreSQL, Prisma, RabbitMQ, and Next.js.
 
-## Architecture
+## 🚀 Key Features
 
-### Frontend
+- **Event-Driven Communication**: All services communicate through RabbitMQ events
+- **Intelligent Caching**: Query service with event-driven cache invalidation
+- **Real-time Updates**: Services react to changes immediately through events
+- **Scalable Architecture**: Services can scale independently
+- **Reliable Messaging**: RabbitMQ provides durability and retry mechanisms
 
-- **Web App** (`apps/web`) - Next.js-based frontend application
+## 🏗️ Architecture Overview
 
-### Backend Microservices
+### Event-Driven Communication Flow
 
-- **Auth Service** (Port 3001) - Handles authentication and user management
-- **Posts Service** (Port 3002) - Manages blog posts
-- **Comments Service** (Port 3003) - Handles post comments (associated with posts)
-- **Moderation Service** (Port 3004) - Content moderation
-- **Query Service** (Port 3005) - Data aggregation and querying
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Auth      │    │   Posts     │    │  Comments   │
+│  Service    │    │  Service    │    │  Service    │
+└─────────────┘    └─────────────┘    └─────────────┘
+       │                   │                   │
+       └───────────────────┼───────────────────┘
+                           │
+                   ┌─────────────┐
+                   │  RabbitMQ   │
+                   │   Events    │
+                   └─────────────┘
+                           │
+       ┌───────────────────┼───────────────────┐
+       │                   │                   │
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│ Moderation  │    │   Query     │    │    Web      │
+│  Service    │    │  Service    │    │    App      │
+└─────────────┘    └─────────────┘    └─────────────┘
+```
+
+### Microservices
+
+1. **Auth Service** (Port 3001)
+
+   - User authentication and session management
+   - Publishes: `user.registered`, `user.logged_in`, `user.logged_out`
+   - Database: PostgreSQL (Port 5433)
+
+2. **Posts Service** (Port 3002)
+
+   - Blog post management
+   - Publishes: `post.created`, `post.updated`, `post.deleted`, `post.published`
+   - Database: PostgreSQL (Port 5434)
+
+3. **Comments Service** (Port 3003)
+
+   - Comment management for posts
+   - Publishes: `comment.created`, `comment.updated`, `comment.deleted`
+   - Database: PostgreSQL (Port 5435)
+
+4. **Moderation Service** (Port 3004)
+
+   - Content moderation
+   - Publishes: `content.flagged`, `content.approved`, `content.rejected`
+   - Database: PostgreSQL (Port 5436)
+
+5. **Query Service** (Port 3005)
+
+   - Data aggregation with intelligent caching
+   - Publishes: `cache.invalidated`
+   - Uses event-driven cache invalidation
+
+6. **Web App** (Port 3000)
+   - Next.js frontend application
+   - Consumes aggregated data from Query Service
 
 ### Infrastructure
 
-- **RabbitMQ** - Message broker for inter-service communication
-- **PostgreSQL** - Database for each microservice (independent databases)
+- **RabbitMQ** (Port 5672)
 
-## Getting Started
+  - Message broker for event-driven communication
+  - Management UI: http://localhost:15672 (admin/admin)
+  - Dead letter queues for failed message handling
+  - Retry mechanisms for reliability
+
+- **PostgreSQL Databases**
+  - Each service has its own independent database
+  - Ports: 5433 (Auth), 5434 (Posts), 5435 (Comments), 5436 (Moderation)
+
+## 📡 Event Types
+
+### Auth Events
+
+- `user.registered` → Notifies all services of new user
+- `user.logged_in` → Notifies services of user activity
+- `user.logged_out` → Notifies services of user logout
+
+### Posts Events
+
+- `post.created` → Notifies comments, moderation, query services
+- `post.updated` → Triggers cache invalidation
+- `post.deleted` → Notifies dependent services
+- `post.published` → Notifies services of public content
+
+### Comments Events
+
+- `comment.created` → Notifies posts, moderation, query services
+- `comment.updated` → Triggers cache invalidation
+- `comment.deleted` → Notifies dependent services
+
+### Moderation Events
+
+- `content.flagged` → Notifies all services of flagged content
+- `content.approved` → Notifies services of approved content
+- `content.rejected` → Notifies services of rejected content
+
+### Cache Events
+
+- `cache.invalidated` → Notifies query service of cache changes
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -33,7 +127,7 @@ A blog application built with microservices architecture using Node.js, PostgreS
 
 ```bash
 # Clone the repository
-cd blog-app
+cd blog-k8s
 
 # Install dependencies
 pnpm install
@@ -51,21 +145,9 @@ make migrate
 make dev
 ```
 
-Or use the Make commands:
+### Access Points
 
-```bash
-make install  # Install dependencies
-make dev      # Start development servers
-make migrate  # Run migrations
-make stop     # Stop Docker services
-make clean    # Clean up everything
-```
-
-### Services Endpoints
-
-Once running, the services are available at:
-
-- **Web Frontend**: http://localhost:3000
+- **Frontend**: http://localhost:3000
 - **Auth Service**: http://localhost:3001
 - **Posts Service**: http://localhost:3002
 - **Comments Service**: http://localhost:3003
@@ -73,98 +155,126 @@ Once running, the services are available at:
 - **Query Service**: http://localhost:3005
 - **RabbitMQ Management**: http://localhost:15672 (admin/admin)
 
-### Database Ports
+## 🔧 Development
 
-Each service has its own PostgreSQL database:
+### Event-Driven Development
 
-- Auth DB: localhost:5433
-- Posts DB: localhost:5434
-- Comments DB: localhost:5435
-- Moderation DB: localhost:5436
-- Query DB: localhost:5437
+1. **Adding New Events**:
 
-## Project Structure
+   - Define event types in `shared/rabbitmq/src/events/event.types.ts`
+   - Update event routing configuration
+   - Implement event handlers in relevant services
 
-```
-blog-app/
-├── apps/
-│   ├── auth/        # Authentication microservice
-│   ├── posts/       # Posts microservice
-│   ├── comments/    # Comments microservice
-│   ├── moderation/  # Moderation microservice
-│   ├── query/       # Query aggregation microservice
-│   └── web/         # Next.js frontend
-├── docker-compose.yml
-├── Makefile
-└── package.json
-```
+2. **Service Communication**:
 
-## Usage
+   - Use RabbitMQ events for cross-service communication
+   - Keep HTTP calls minimal (only for direct data fetching)
+   - Implement event handlers for reactive updates
 
-### Creating a Post
+3. **Cache Management**:
+   - Query service automatically invalidates cache based on events
+   - Use cache stats endpoint to monitor cache performance
+   - Implement granular cache invalidation for optimal performance
+
+### Testing Events
 
 ```bash
-curl -X POST http://localhost:3002/posts \
+# Monitor RabbitMQ events
+# Visit http://localhost:15672 and check the "Exchanges" tab
+
+# Check cache stats
+curl http://localhost:3005/query/cache/stats
+
+# Manually invalidate cache
+curl -X POST http://localhost:3005/query/cache/invalidate \
   -H "Content-Type: application/json" \
-  -d '{
-    "title": "My First Post",
-    "content": "This is the content of my post",
-    "published": true,
-    "authorId": "user-id"
-  }'
+  -d '{"cacheKey": "post:123"}'
 ```
 
-### Fetching Posts
+## 📊 Monitoring
+
+### RabbitMQ Management
+
+- **URL**: http://localhost:15672
+- **Username**: admin
+- **Password**: admin
+- Monitor exchanges, queues, and message flow
+- Check dead letter queues for failed messages
+
+### Service Logs
+
+Each service logs event processing:
 
 ```bash
-# Get all posts
-curl http://localhost:3005/query/posts
-
-# Get a specific post with comments
-curl http://localhost:3005/query/post/<post-id>
+# View service logs
+docker-compose logs -f auth
+docker-compose logs -f posts
+docker-compose logs -f comments
+docker-compose logs -f moderation
+docker-compose logs -f query
 ```
 
-### Adding a Comment
+## 🛠️ Technology Stack
 
-```bash
-curl -X POST http://localhost:3003/comments \
-  -H "Content-Type: application/json" \
-  -d '{
-    "postId": "post-id",
-    "content": "Great post!",
-    "authorId": "user-id"
-  }'
-```
-
-## Development
-
-### Running Individual Services
-
-```bash
-# Run auth service
-pnpm --filter @blog-app/auth run dev
-
-# Run posts service
-pnpm --filter @blog-app/posts run dev
-
-# etc...
-```
-
-### Database Management
-
-```bash
-# Open Prisma Studio for auth service
-pnpm --filter @blog-app/auth run prisma:studio
-
-# Same for other services
-```
-
-## Technologies
-
-- **Frontend**: Next.js, TypeScript, Tailwind CSS
-- **Backend**: NestJS, TypeScript
-- **Database**: PostgreSQL with Prisma ORM
-- **Message Broker**: RabbitMQ
-- **Containerization**: Docker
+- **Backend**: NestJS, TypeScript, Prisma ORM
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Databases**: PostgreSQL (one per microservice)
+- **Message Broker**: RabbitMQ with dead letter queues
+- **Containerization**: Docker, Docker Compose
 - **Package Manager**: pnpm
-- **Build System**: Turbo
+- **Build System**: Turbo (monorepo)
+
+## 🔄 Event Flow Examples
+
+### User Registration Flow
+
+1. User registers → Auth Service
+2. Auth Service publishes `user.registered` event
+3. Posts, Comments, Moderation services receive event
+4. Services can initialize user-specific data
+
+### Post Creation Flow
+
+1. User creates post → Posts Service
+2. Posts Service publishes `post.created` event
+3. Comments Service prepares for potential comments
+4. Moderation Service flags for review
+5. Query Service invalidates cache
+
+### Comment Addition Flow
+
+1. User adds comment → Comments Service
+2. Comments Service publishes `comment.created` event
+3. Posts Service updates comment count
+4. Moderation Service reviews comment
+5. Query Service invalidates comments cache
+
+## 🎯 Benefits
+
+1. **Decoupling**: Services are loosely coupled through events
+2. **Scalability**: Services can scale independently
+3. **Reliability**: Events provide durability and retry mechanisms
+4. **Real-time Updates**: Services react to changes immediately
+5. **Cache Invalidation**: Intelligent cache management through events
+6. **Audit Trail**: All events are logged for debugging and monitoring
+7. **Fault Tolerance**: Dead letter queues handle failed messages
+8. **Performance**: Intelligent caching reduces database load
+
+## 📝 Next Steps
+
+1. **Start the application**: `make dev`
+2. **Create your first user**: Visit http://localhost:3000/auth
+3. **Monitor events**: Check RabbitMQ management UI
+4. **Test cache invalidation**: Create posts and comments
+5. **Explore the architecture**: Read ARCHITECTURE.md for detailed design
+
+## 📚 Documentation
+
+- **README.md**: This overview
+- **ARCHITECTURE.md**: Detailed system architecture
+- **QUICK_START.md**: Quick start guide
+- **PROJECT_SUMMARY.md**: Project summary
+
+---
+
+**Status**: ✅ Event-driven architecture implemented and ready to run! 🚀

@@ -2,14 +2,18 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { ModerationModule } from './moderation/moderation.module';
+import { RabbitMQModule } from '@blog/shared-rabbitmq';
 
 @Module({
   imports: [
-        ConfigModule.forRoot({
+    ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
     }),
-    PrismaModule, ModerationModule],
+    RabbitMQModule,
+    PrismaModule, 
+    ModerationModule
+  ],
 })
 export class AppModule {}
 

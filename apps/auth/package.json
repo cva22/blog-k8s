@@ -20,17 +20,18 @@
     "@prisma/adapter-pg": "^6.18.0",
     "@prisma/client": "^6.16.2",
     "amqp-connection-manager": "^4.1.14",
-    "amqplib": "^0.10.3",
+    "amqplib": "^0.10.9",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "@blog/shared-rabbitmq": "workspace:*"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.2.0",
     "@nestjs/schematics": "^10.0.2",
-    "@types/amqplib": "^0.10.4",
+    "@types/amqplib": "^0.10.1",
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^4.17.17",
     "@types/node": "^20.9.0",

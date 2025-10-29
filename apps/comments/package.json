@@ -20,11 +20,12 @@
     "@prisma/adapter-pg": "^6.18.0",
     "@prisma/client": "^6.16.2",
     "amqp-connection-manager": "^4.1.14",
-    "amqplib": "^0.10.3",
+    "amqplib": "^0.10.9",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "@blog/shared-rabbitmq": "workspace:*"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.2.0",

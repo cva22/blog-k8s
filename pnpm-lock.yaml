@@ -17,6 +17,9 @@ importers:
 
   apps/auth:
     dependencies:
+      '@blog/shared-rabbitmq':
+        specifier: workspace:*
+        version: link:../../packages/rabbitmq
       '@nestjs/common':
         specifier: ^10.2.0
         version: 10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.2)
@@ -42,7 +45,7 @@ importers:
         specifier: ^4.1.14
         version: 4.1.15(amqplib@0.10.9)
       amqplib:
-        specifier: ^0.10.3
+        specifier: ^0.10.9
         version: 0.10.9
       bcrypt:
         specifier: ^5.1.1
@@ -67,7 +70,7 @@ importers:
         specifier: ^10.0.2
         version: 10.2.3(typescript@5.9.3)
       '@types/amqplib':
-        specifier: ^0.10.4
+        specifier: ^0.10.1
         version: 0.10.8
       '@types/bcrypt':
         specifier: ^5.0.2
@@ -99,6 +102,9 @@ importers:
 
   apps/comments:
     dependencies:
+      '@blog/shared-rabbitmq':
+        specifier: workspace:*
+        version: link:../../packages/rabbitmq
       '@nestjs/common':
         specifier: ^10.2.0
         version: 10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.2)
@@ -124,7 +130,7 @@ importers:
         specifier: ^4.1.14
         version: 4.1.15(amqplib@0.10.9)
       amqplib:
-        specifier: ^0.10.3
+        specifier: ^0.10.9
         version: 0.10.9
       class-transformer:
         specifier: ^0.5.1
@@ -172,6 +178,9 @@ importers:
 
   apps/moderation:
     dependencies:
+      '@blog/shared-rabbitmq':
+        specifier: workspace:*
+        version: link:../../packages/rabbitmq
       '@nestjs/common':
         specifier: ^10.2.0
         version: 10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.2)
@@ -197,7 +206,7 @@ importers:
         specifier: ^4.1.14
         version: 4.1.15(amqplib@0.10.9)
       amqplib:
-        specifier: ^0.10.3
+        specifier: ^0.10.9
         version: 0.10.9
       class-transformer:
         specifier: ^0.5.1
@@ -245,6 +254,9 @@ importers:
 
   apps/posts:
     dependencies:
+      '@blog/shared-rabbitmq':
+        specifier: workspace:*
+        version: link:../../packages/rabbitmq
       '@nestjs/common':
         specifier: ^10.2.0
         version: 10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.2)
@@ -270,7 +282,7 @@ importers:
         specifier: ^4.1.14
         version: 4.1.15(amqplib@0.10.9)
       amqplib:
-        specifier: ^0.10.3
+        specifier: ^0.10.9
         version: 0.10.9
       class-transformer:
         specifier: ^0.5.1
@@ -318,18 +330,27 @@ importers:
 
   apps/query:
     dependencies:
+      '@blog/shared-rabbitmq':
+        specifier: workspace:*
+        version: link:../../packages/rabbitmq
       '@nestjs/axios':
         specifier: ^3.0.0
         version: 3.1.3(@nestjs/common@10.4.20)(axios@1.13.0)(rxjs@7.8.2)
       '@nestjs/common':
         specifier: ^10.2.0
         version: 10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.2)
+      '@nestjs/config':
+        specifier: ^4.0.2
+        version: 4.0.2(@nestjs/common@10.4.20)(rxjs@7.8.2)
       '@nestjs/core':
         specifier: ^10.2.0
         version: 10.4.20(@nestjs/common@10.4.20)(@nestjs/microservices@10.4.20)(@nestjs/platform-express@10.4.20)(reflect-metadata@0.1.14)(rxjs@7.8.2)
       '@nestjs/platform-express':
         specifier: ^10.2.0
         version: 10.4.20(@nestjs/common@10.4.20)(@nestjs/core@10.4.20)
+      amqplib:
+        specifier: ^0.10.3
+        version: 0.10.9
       axios:
         specifier: ^1.6.0
         version: 1.13.0
@@ -352,6 +373,9 @@ importers:
       '@nestjs/schematics':
         specifier: ^10.0.2
         version: 10.2.3(typescript@5.9.3)
+      '@types/amqplib':
+        specifier: ^0.10.4
+        version: 0.10.8
       '@types/express':
         specifier: ^4.17.17
         version: 4.17.25
@@ -412,6 +436,28 @@ importers:
         version: 3.4.18
       typescript:
         specifier: ^5.2.2
+        version: 5.9.3
+
+  packages/rabbitmq:
+    dependencies:
+      '@nestjs/common':
+        specifier: ^10.0.0
+        version: 10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.2)
+      '@nestjs/config':
+        specifier: ^3.0.0
+        version: 3.3.0(@nestjs/common@10.4.20)(rxjs@7.8.2)
+      amqplib:
+        specifier: ^0.10.9
+        version: 0.10.9
+    devDependencies:
+      '@types/amqplib':
+        specifier: ^0.10.1
+        version: 0.10.8
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.23
+      typescript:
+        specifier: ^5.0.0
         version: 5.9.3
 
 packages:
@@ -731,6 +777,19 @@ packages:
       uid: 2.0.2
     transitivePeerDependencies:
       - supports-color
+    dev: false
+
+  /@nestjs/config@3.3.0(@nestjs/common@10.4.20)(rxjs@7.8.2):
+    resolution: {integrity: sha512-pdGTp8m9d0ZCrjTpjkUbZx6gyf2IKf+7zlkrPNMsJzYZ4bFRRTpXrnj+556/5uiI6AfL5mMrJc2u7dB6bvM+VA==}
+    peerDependencies:
+      '@nestjs/common': ^8.0.0 || ^9.0.0 || ^10.0.0
+      rxjs: ^7.1.0
+    dependencies:
+      '@nestjs/common': 10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.2)
+      dotenv: 16.4.5
+      dotenv-expand: 10.0.0
+      lodash: 4.17.21
+      rxjs: 7.8.2
     dev: false
 
   /@nestjs/config@4.0.2(@nestjs/common@10.4.20)(rxjs@7.8.2):
@@ -2600,11 +2659,21 @@ packages:
       esutils: 2.0.3
     dev: true
 
+  /dotenv-expand@10.0.0:
+    resolution: {integrity: sha512-GopVGCpVS1UKH75VKHGuQFqS1Gusej0z4FyQkPdwjil2gNIv+LNsqBlboOzpJFZKVT95GkCyWJbBSdFEFUWI2A==}
+    engines: {node: '>=12'}
+    dev: false
+
   /dotenv-expand@12.0.1:
     resolution: {integrity: sha512-LaKRbou8gt0RNID/9RoI+J2rvXsBRPMV7p+ElHlPhcSARbCPDYcYG2s1TIzAfWv4YSgyY5taidWzzs31lNV3yQ==}
     engines: {node: '>=12'}
     dependencies:
       dotenv: 16.6.1
+    dev: false
+
+  /dotenv@16.4.5:
+    resolution: {integrity: sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==}
+    engines: {node: '>=12'}
     dev: false
 
   /dotenv@16.4.7:
