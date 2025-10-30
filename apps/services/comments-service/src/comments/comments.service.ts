@@ -35,6 +35,12 @@ export class CommentsService implements OnModuleInit {
   }
 
   private async handleEvent(event: BlogEvent) {
+    // Idempotency: skip if already processed
+    const already = await this.prisma.processedEvent.findUnique({ where: { id: event.id } }).catch(() => null);
+    if (already) {
+      return;
+    }
+
     switch (event.type) {
       case 'user.registered':
         this.appLogger.logServiceCall('comments', 'New user registered, comments service notified', { eventData: event.data });
@@ -61,16 +67,28 @@ export class CommentsService implements OnModuleInit {
       case 'content.flagged':
         if (event.data.contentType === 'comment') {
           this.appLogger.logServiceCall('comments', 'Comment flagged', { eventData: event.data });
+          await this.prisma.comment.updateMany({
+            where: { id: event.data.contentId },
+            data: { visible: false },
+          });
         }
         break;
       case 'content.approved':
         if (event.data.contentType === 'comment') {
           this.appLogger.logServiceCall('comments', 'Comment approved', { eventData: event.data });
+          await this.prisma.comment.updateMany({
+            where: { id: event.data.contentId },
+            data: { visible: true },
+          });
         }
         break;
       case 'content.rejected':
         if (event.data.contentType === 'comment') {
           this.appLogger.logServiceCall('comments', 'Comment rejected', { eventData: event.data });
+          await this.prisma.comment.updateMany({
+            where: { id: event.data.contentId },
+            data: { visible: false },
+          });
         }
         break;
       default:
@@ -84,6 +102,7 @@ export class CommentsService implements OnModuleInit {
         postId: createCommentDto.postId,
         content: createCommentDto.content,
         authorId,
+        visible: false,
       },
     });
 
@@ -104,7 +123,7 @@ export class CommentsService implements OnModuleInit {
   }
 
   async findAll(postId?: string) {
-    const where = postId ? { postId } : {};
+    const where = postId ? { postId, visible: true } : { visible: true };
     
     return this.prisma.comment.findMany({
       where,

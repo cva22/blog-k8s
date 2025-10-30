@@ -30,6 +30,12 @@ export class ModerationService implements OnModuleInit {
   }
 
   private async handleEvent(event: BlogEvent) {
+    // Idempotency: skip if already processed
+    const already = await this.prisma.processedEvent.findUnique({ where: { id: event.id } }).catch(() => null);
+    if (already) {
+      return;
+    }
+
     switch (event.type) {
       case 'user.registered':
         this.appLogger.logServiceCall('moderation', 'New user registered, moderation service notified', { eventData: event.data });
@@ -54,6 +60,9 @@ export class ModerationService implements OnModuleInit {
       default:
         this.appLogger.logServiceCall('moderation', 'Unhandled event in moderation service', { eventType: event.type });
     }
+
+    // Mark processed
+    await this.prisma.processedEvent.create({ data: { id: event.id } }).catch(() => undefined);
   }
 
   async createModerationAction(createModerationActionDto: CreateModerationActionDto) {

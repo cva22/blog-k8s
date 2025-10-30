@@ -14,10 +14,19 @@ model Comment {
   postId    String
   content   String
   authorId  String
+  visible   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("comments")
+}
+
+
+model ProcessedEvent {
+  id         String   @id
+  receivedAt DateTime @default(now())
+
+  @@map("processed_events")
 }
 
 

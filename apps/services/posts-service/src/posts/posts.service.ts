@@ -34,6 +34,12 @@ export class PostsService implements OnModuleInit {
   }
 
   private async handleEvent(event: BlogEvent) {
+    // Idempotency: skip if already processed
+    const already = await this.prisma.processedEvent.findUnique({ where: { id: event.id } }).catch(() => null);
+    if (already) {
+      return;
+    }
+
     switch (event.type) {
       case 'user.registered':
         this.appLogger.logServiceCall('posts', 'New user registered, posts service notified', { eventData: event.data });
@@ -56,21 +62,36 @@ export class PostsService implements OnModuleInit {
       case 'content.flagged':
         if (event.data.contentType === 'post') {
           this.appLogger.logServiceCall('posts', 'Post flagged', { eventData: event.data });
+          await this.prisma.post.updateMany({
+            where: { id: event.data.contentId },
+            data: { published: false },
+          });
         }
         break;
       case 'content.approved':
         if (event.data.contentType === 'post') {
           this.appLogger.logServiceCall('posts', 'Post approved', { eventData: event.data });
+          await this.prisma.post.updateMany({
+            where: { id: event.data.contentId },
+            data: { published: true },
+          });
         }
         break;
       case 'content.rejected':
         if (event.data.contentType === 'post') {
           this.appLogger.logServiceCall('posts', 'Post rejected', { eventData: event.data });
+          await this.prisma.post.updateMany({
+            where: { id: event.data.contentId },
+            data: { published: false },
+          });
         }
         break;
       default:
         this.appLogger.logServiceCall('posts', 'Unhandled event in posts service', { eventType: event.type });
     }
+
+    // Mark processed
+    await this.prisma.processedEvent.create({ data: { id: event.id } }).catch(() => undefined);
   }
 
   async create(createPostDto: CreatePostDto, authorId: string) {
