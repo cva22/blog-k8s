@@ -4,7 +4,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
 import { AppLogger } from '@blog/shared-logger';
-import { RequestContext } from '@blog/shared-types';
+// import { RequestContext } from '@blog/shared-types';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
