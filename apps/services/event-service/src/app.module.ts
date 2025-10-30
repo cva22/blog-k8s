@@ -7,13 +7,24 @@ import { ClientsModule, Transport } from "@nestjs/microservices";
   imports: [
     ClientsModule.register([
       {
-        name: "RABBITMQ_SERVICE",
+        name: "RABBITMQ_POSTS",
         transport: Transport.RMQ,
         options: {
           urls: [
             process.env.RABBITMQ_URL || "amqp://admin:admin@localhost:5672",
           ],
-          queue: "main_event_queue",
+          queue: "posts_events_queue",
+          queueOptions: { durable: true },
+        },
+      },
+      {
+        name: "RABBITMQ_COMMENTS",
+        transport: Transport.RMQ,
+        options: {
+          urls: [
+            process.env.RABBITMQ_URL || "amqp://admin:admin@localhost:5672",
+          ],
+          queue: "comments_events_queue",
           queueOptions: { durable: true },
         },
       },
