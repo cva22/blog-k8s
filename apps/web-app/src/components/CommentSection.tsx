@@ -30,12 +30,12 @@ export default function CommentSection({ postId, comments }: { postId: string, c
 
         try {
             setSubmitting(true)
-            const response = await axios.post('http://localhost:3003/comments', {
+            await axios.post('http://localhost:3010/comments', {
                 postId,
                 content: newComment,
                 authorId: user.id,
             })
-            setCommentList([...commentList, response.data])
+            // You may show a queued message or just reset state
             setNewComment('')
         } catch (error) {
             console.error('Error submitting comment:', error)

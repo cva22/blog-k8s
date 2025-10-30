@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { RequestIdMiddleware } from '@blog/shared-middleware';
 import { AppLogger } from '@blog/shared-logger';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,6 +13,17 @@ async function bootstrap() {
   // Add request ID middleware
   app.use(RequestIdMiddleware);
   
+  // Start RMQ microservice listener for comment.create events
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: ['amqp://localhost:5672'],
+      queue: 'main_event_queue',
+      queueOptions: { durable: true },
+    },
+  });
+  await app.startAllMicroservices();
+
   const port = process.env.PORT || 3003;
   await app.listen(port);
   
