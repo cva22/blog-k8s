@@ -18,7 +18,6 @@ export class PostsService implements OnModuleInit {
   async onModuleInit() {
     // Subscribe to events that posts service needs to handle
     await this.rabbitMQService.subscribeToEvents(
-      'posts',
       [
         'user.registered',
         'user.logged_in',

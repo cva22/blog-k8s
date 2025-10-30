@@ -17,7 +17,6 @@ export class ModerationService implements OnModuleInit {
   async onModuleInit() {
     // Subscribe to events that moderation service needs to handle
     await this.rabbitMQService.subscribeToEvents(
-      'moderation',
       [
         'user.registered',
         'post.created',

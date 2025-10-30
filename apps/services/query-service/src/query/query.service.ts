@@ -20,7 +20,6 @@ export class QueryService implements OnModuleInit {
   async onModuleInit() {
     // Subscribe to events that query service needs to handle for cache invalidation
     await this.rabbitMQService.subscribeToEvents(
-      'query',
       [
         'post.created',
         'post.updated',

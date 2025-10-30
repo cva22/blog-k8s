@@ -1,5 +1,13 @@
 import CommentSection from './CommentSection'
 
+interface PostComment {
+    id: string
+    postId: string
+    content: string
+    authorId: string
+    createdAt: string
+}
+
 interface Post {
     id: string
     title: string
@@ -7,7 +15,7 @@ interface Post {
     authorId: string
     published: boolean
     createdAt: string
-    comments: Comment[]
+    comments: PostComment[]
 }
 
 export default function PostDetail({ post }: { post: Post }) {

@@ -1,18 +1,25 @@
 version: "3.8"
 
 services:
-  # RabbitMQ
+  # RabbitMQ (Infrastructure Layer)
   rabbitmq:
     image: rabbitmq:3-management
     container_name: blog-app-rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672" # AMQP port
+      - "15672:15672" # Management UI port
     environment:
       - RABBITMQ_DEFAULT_USER=admin
       - RABBITMQ_DEFAULT_PASS=admin
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
     networks:
       - blog-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Auth Service Database
   auth-db:
@@ -75,6 +82,7 @@ services:
       - blog-network
 
 volumes:
+  rabbitmq-data:
   auth-db-data:
   posts-db-data:
   comments-db-data:

@@ -18,7 +18,6 @@ export class CommentsService implements OnModuleInit {
   async onModuleInit() {
     // Subscribe to events that comments service needs to handle
     await this.rabbitMQService.subscribeToEvents(
-      'comments',
       [
         'user.registered',
         'user.logged_in',

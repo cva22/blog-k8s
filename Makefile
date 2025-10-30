@@ -6,7 +6,7 @@ install:
 
 # Start development servers
 dev:
-	docker-compose up -d
+	docker-compose -f docker-compose.yaml up -d
 	pnpm --filter @blog-app/auth run prisma:generate
 	pnpm --filter @blog-app/posts run prisma:generate
 	pnpm --filter @blog-app/comments run prisma:generate
@@ -20,7 +20,6 @@ migrate:
 	pnpm --filter @blog-app/posts run prisma:migrate
 	pnpm --filter @blog-app/comments run prisma:migrate
 	pnpm --filter @blog-app/moderation run prisma:migrate
-	pnpm --filter @blog-app/query run prisma:migrate
 
 # Generate Prisma clients
 generate:
@@ -28,27 +27,24 @@ generate:
 	pnpm --filter @blog-app/posts run prisma:generate
 	pnpm --filter @blog-app/comments run prisma:generate
 	pnpm --filter @blog-app/moderation run prisma:generate
-	pnpm --filter @blog-app/query run prisma:generate
 
 # Build all services
 build:
 	pnpm build
 
-# Start all services (production)
-start:
-	pnpm start
+start-docker:
+	docker compose up -d
 
-# Stop all services
-stop:
-	docker-compose down
+stop-docker:
+	docker-compose -f docker-compose.yaml down
 
 # Clean up
 clean:
-	docker-compose down -v
-	rm -rf apps/*/node_modules
+	docker-compose -f docker-compose.yaml down -v
+	rm -rf apps/*/node_modules apps/*/*/node_modules
 	rm -rf node_modules
-	rm -rf apps/*/dist
-	rm -rf apps/*/.turbo
+	rm -rf apps/*/dist apps/*/*/dist
+	rm -rf apps/*/.turbo apps/*/*/.turbo
 
 # Reset everything
 reset: clean install migrate dev
