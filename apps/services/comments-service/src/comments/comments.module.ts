@@ -7,8 +7,8 @@ import { AppLoggerModule } from '@blog/shared-logger';
 
 @Module({
   imports: [AppLoggerModule],
-  controllers: [CommentsController],
-  providers: [CommentsService, CommentsRepository, CommentsEventConsumer],
+  controllers: [CommentsController, CommentsEventConsumer],
+  providers: [CommentsService, CommentsRepository],
   exports: [CommentsService],
 })
 export class CommentsModule {}

@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload, Ctx, RmqContext } from '@nestjs/microservices';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 
-@Injectable()
+@Controller()
 export class PostsEventConsumer {
   private readonly logger = new Logger(PostsEventConsumer.name);
 

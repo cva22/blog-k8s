@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload, Ctx, RmqContext } from '@nestjs/microservices';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 
-@Injectable()
+@Controller()
 export class CommentsEventConsumer {
   private readonly logger = new Logger(CommentsEventConsumer.name);
 

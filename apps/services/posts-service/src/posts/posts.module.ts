@@ -7,8 +7,8 @@ import { AppLoggerModule } from '@blog/shared-logger';
 
 @Module({
   imports: [AppLoggerModule],
-  controllers: [PostsController],
-  providers: [PostsService, PostsRepository, PostsEventConsumer],
+  controllers: [PostsController, PostsEventConsumer],
+  providers: [PostsService, PostsRepository],
   exports: [PostsService],
 })
 export class PostsModule {}
