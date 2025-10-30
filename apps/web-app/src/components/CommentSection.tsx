@@ -30,7 +30,7 @@ export default function CommentSection({ postId, comments }: { postId: string, c
 
         try {
             setSubmitting(true)
-            await axios.post('http://localhost:3010/comments', {
+            await axios.post('http://localhost:3006/comments', {
                 postId,
                 content: newComment,
                 authorId: user.id,

@@ -30,7 +30,7 @@ export default function CreatePostForm({ onPostCreated }: CreatePostFormProps) {
             setSubmitting(true)
             setMessage('')
 
-            await axios.post('http://localhost:3010/posts', {
+            await axios.post('http://localhost:3006/posts', {
                 title: formData.title,
                 content: formData.content,
                 published: formData.published,
