@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PostsRepository } from './posts.repository';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
@@ -8,7 +8,7 @@ import { AppLogger } from '@blog/shared-logger';
 @Injectable()
 export class PostsService implements OnModuleInit {
   constructor(
-    private prisma: PrismaService,
+    private readonly postsRepository: PostsRepository,
     private rabbitMQService: RabbitMQService,
     private appLogger: AppLogger,
   ) {
@@ -35,7 +35,7 @@ export class PostsService implements OnModuleInit {
 
   private async handleEvent(event: BlogEvent) {
     // Idempotency: skip if already processed
-    const already = await this.prisma.processedEvent.findUnique({ where: { id: event.id } }).catch(() => null);
+    const already = await this.postsRepository.findProcessedEventById(event.id).catch(() => null);
     if (already) {
       return;
     }
@@ -62,28 +62,19 @@ export class PostsService implements OnModuleInit {
       case 'content.flagged':
         if (event.data.contentType === 'post') {
           this.appLogger.logServiceCall('posts', 'Post flagged', { eventData: event.data });
-          await this.prisma.post.updateMany({
-            where: { id: event.data.contentId },
-            data: { published: false },
-          });
+          await this.postsRepository.updatePostPublished(event.data.contentId, false);
         }
         break;
       case 'content.approved':
         if (event.data.contentType === 'post') {
           this.appLogger.logServiceCall('posts', 'Post approved', { eventData: event.data });
-          await this.prisma.post.updateMany({
-            where: { id: event.data.contentId },
-            data: { published: true },
-          });
+          await this.postsRepository.updatePostPublished(event.data.contentId, true);
         }
         break;
       case 'content.rejected':
         if (event.data.contentType === 'post') {
           this.appLogger.logServiceCall('posts', 'Post rejected', { eventData: event.data });
-          await this.prisma.post.updateMany({
-            where: { id: event.data.contentId },
-            data: { published: false },
-          });
+          await this.postsRepository.updatePostPublished(event.data.contentId, false);
         }
         break;
       default:
@@ -91,18 +82,11 @@ export class PostsService implements OnModuleInit {
     }
 
     // Mark processed
-    await this.prisma.processedEvent.create({ data: { id: event.id } }).catch(() => undefined);
+    await this.postsRepository.createProcessedEvent(event.id).catch(() => undefined);
   }
 
   async create(createPostDto: CreatePostDto, authorId: string) {
-    const post = await this.prisma.post.create({
-      data: {
-        title: createPostDto.title,
-        content: createPostDto.content,
-        authorId,
-        published: createPostDto.published || false,
-      },
-    });
+    const post = await this.postsRepository.createPost(createPostDto, authorId);
 
     // Publish post created event
     const event = await this.rabbitMQService.createEvent(
@@ -122,33 +106,21 @@ export class PostsService implements OnModuleInit {
   }
 
   async findAll(published?: boolean) {
-    const where = published !== undefined ? { published } : {};
-    
-    return this.prisma.post.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.postsRepository.findAllPosts(published);
   }
 
   async findOne(id: string) {
-    return this.prisma.post.findUnique({
-      where: { id },
-    });
+    return this.postsRepository.findPostById(id);
   }
 
   async update(id: string, updatePostDto: UpdatePostDto) {
-    const existingPost = await this.prisma.post.findUnique({
-      where: { id },
-    });
+    const existingPost = await this.postsRepository.findPostById(id);
 
     if (!existingPost) {
       throw new Error('Post not found');
     }
 
-    const post = await this.prisma.post.update({
-      where: { id },
-      data: updatePostDto,
-    });
+    const post = await this.postsRepository.updatePost(id, updatePostDto);
 
     // Publish post updated event
     const event = await this.rabbitMQService.createEvent(
@@ -182,17 +154,13 @@ export class PostsService implements OnModuleInit {
   }
 
   async remove(id: string) {
-    const post = await this.prisma.post.findUnique({
-      where: { id },
-    });
+    const post = await this.postsRepository.findPostById(id);
 
     if (!post) {
       throw new Error('Post not found');
     }
 
-    await this.prisma.post.delete({
-      where: { id },
-    });
+    await this.postsRepository.deletePost(id);
 
     // Publish post deleted event
     const event = await this.rabbitMQService.createEvent(

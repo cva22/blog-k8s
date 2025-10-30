@@ -1,13 +1,13 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateModerationActionDto } from './dto/create-moderation-action.dto';
 import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
 import { AppLogger } from '@blog/shared-logger';
+import { CreateModerationActionDto } from './dto/create-moderation-action.dto';
+import { ModerationRepository } from './moderation.repository';
 
 @Injectable()
 export class ModerationService implements OnModuleInit {
   constructor(
-    private prisma: PrismaService,
+    private readonly moderationRepository: ModerationRepository,
     private rabbitMQService: RabbitMQService,
     private appLogger: AppLogger,
   ) {
@@ -31,7 +31,7 @@ export class ModerationService implements OnModuleInit {
 
   private async handleEvent(event: BlogEvent) {
     // Idempotency: skip if already processed
-    const already = await this.prisma.processedEvent.findUnique({ where: { id: event.id } }).catch(() => null);
+    const already = await this.moderationRepository.findProcessedEventById(event.id).catch(() => null);
     if (already) {
       return;
     }
@@ -62,19 +62,11 @@ export class ModerationService implements OnModuleInit {
     }
 
     // Mark processed
-    await this.prisma.processedEvent.create({ data: { id: event.id } }).catch(() => undefined);
+    await this.moderationRepository.createProcessedEvent(event.id).catch(() => undefined);
   }
 
   async createModerationAction(createModerationActionDto: CreateModerationActionDto) {
-    const moderationAction = await this.prisma.moderationAction.create({
-      data: {
-        contentId: createModerationActionDto.contentId,
-        contentType: createModerationActionDto.contentType,
-        action: createModerationActionDto.action,
-        moderatorId: createModerationActionDto.moderatorId || 'system',
-        reason: createModerationActionDto.reason,
-      },
-    });
+    const moderationAction = await this.moderationRepository.createModerationAction(createModerationActionDto);
 
     // Publish appropriate event based on action
     let eventType: 'content.flagged' | 'content.approved' | 'content.rejected';
@@ -122,25 +114,15 @@ export class ModerationService implements OnModuleInit {
   }
 
   async findAllModerationActions() {
-    return this.prisma.moderationAction.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.moderationRepository.findAllModerationActions();
   }
 
   async findOne(id: string) {
-    return this.prisma.moderationAction.findUnique({
-      where: { id },
-    });
+    return this.moderationRepository.findModerationActionById(id);
   }
 
   async getModerationHistoryForContent(contentId: string, contentType: string) {
-    return this.prisma.moderationAction.findMany({
-      where: {
-        contentId,
-        contentType,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.moderationRepository.findModerationHistoryForContent(contentId, contentType);
   }
 
   // Helper method to flag content

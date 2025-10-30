@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { CommentsRepository } from './comments.repository';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
@@ -8,7 +8,7 @@ import { AppLogger } from '@blog/shared-logger';
 @Injectable()
 export class CommentsService implements OnModuleInit {
   constructor(
-    private prisma: PrismaService,
+    private readonly commentsRepository: CommentsRepository,
     private rabbitMQService: RabbitMQService,
     private appLogger: AppLogger,
   ) {
@@ -36,7 +36,7 @@ export class CommentsService implements OnModuleInit {
 
   private async handleEvent(event: BlogEvent) {
     // Idempotency: skip if already processed
-    const already = await this.prisma.processedEvent.findUnique({ where: { id: event.id } }).catch(() => null);
+    const already = await this.commentsRepository.findProcessedEventById(event.id).catch(() => null);
     if (already) {
       return;
     }
@@ -67,28 +67,19 @@ export class CommentsService implements OnModuleInit {
       case 'content.flagged':
         if (event.data.contentType === 'comment') {
           this.appLogger.logServiceCall('comments', 'Comment flagged', { eventData: event.data });
-          await this.prisma.comment.updateMany({
-            where: { id: event.data.contentId },
-            data: { visible: false },
-          });
+          await this.commentsRepository.updateCommentVisibility(event.data.contentId, false);
         }
         break;
       case 'content.approved':
         if (event.data.contentType === 'comment') {
           this.appLogger.logServiceCall('comments', 'Comment approved', { eventData: event.data });
-          await this.prisma.comment.updateMany({
-            where: { id: event.data.contentId },
-            data: { visible: true },
-          });
+          await this.commentsRepository.updateCommentVisibility(event.data.contentId, true);
         }
         break;
       case 'content.rejected':
         if (event.data.contentType === 'comment') {
           this.appLogger.logServiceCall('comments', 'Comment rejected', { eventData: event.data });
-          await this.prisma.comment.updateMany({
-            where: { id: event.data.contentId },
-            data: { visible: false },
-          });
+          await this.commentsRepository.updateCommentVisibility(event.data.contentId, false);
         }
         break;
       default:
@@ -97,14 +88,7 @@ export class CommentsService implements OnModuleInit {
   }
 
   async create(createCommentDto: CreateCommentDto, authorId: string) {
-    const comment = await this.prisma.comment.create({
-      data: {
-        postId: createCommentDto.postId,
-        content: createCommentDto.content,
-        authorId,
-        visible: false,
-      },
-    });
+    const comment = await this.commentsRepository.createComment(createCommentDto, authorId);
 
     // Publish comment created event
     const event = await this.rabbitMQService.createEvent(
@@ -123,33 +107,21 @@ export class CommentsService implements OnModuleInit {
   }
 
   async findAll(postId?: string) {
-    const where = postId ? { postId, visible: true } : { visible: true };
-    
-    return this.prisma.comment.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.commentsRepository.findAllComments(postId);
   }
 
   async findOne(id: string) {
-    return this.prisma.comment.findUnique({
-      where: { id },
-    });
+    return this.commentsRepository.findCommentById(id);
   }
 
   async update(id: string, updateCommentDto: UpdateCommentDto) {
-    const existingComment = await this.prisma.comment.findUnique({
-      where: { id },
-    });
+    const existingComment = await this.commentsRepository.findCommentById(id);
 
     if (!existingComment) {
       throw new Error('Comment not found');
     }
 
-    const comment = await this.prisma.comment.update({
-      where: { id },
-      data: updateCommentDto,
-    });
+    const comment = await this.commentsRepository.updateComment(id, updateCommentDto);
 
     // Publish comment updated event
     const event = await this.rabbitMQService.createEvent(
@@ -168,17 +140,13 @@ export class CommentsService implements OnModuleInit {
   }
 
   async remove(id: string) {
-    const comment = await this.prisma.comment.findUnique({
-      where: { id },
-    });
+    const comment = await this.commentsRepository.findCommentById(id);
 
     if (!comment) {
       throw new Error('Comment not found');
     }
 
-    await this.prisma.comment.delete({
-      where: { id },
-    });
+    await this.commentsRepository.deleteComment(id);
 
     // Publish comment deleted event
     const event = await this.rabbitMQService.createEvent(

@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException, OnModuleInit } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { AuthRepository } from './auth.repository';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RabbitMQService, BlogEvent } from '@blog/shared-rabbitmq';
@@ -10,7 +10,7 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class AuthService implements OnModuleInit {
   constructor(
-    private prisma: PrismaService,
+    private readonly authRepository: AuthRepository,
     private rabbitMQService: RabbitMQService,
     private appLogger: AppLogger,
   ) {
@@ -37,13 +37,7 @@ export class AuthService implements OnModuleInit {
   async register(registerDto: RegisterDto) {
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
     
-    const user = await this.prisma.user.create({
-      data: {
-        email: registerDto.email,
-        username: registerDto.username,
-        password: hashedPassword,
-      },
-    });
+    const user = await this.authRepository.createUser(registerDto, hashedPassword);
 
     // Publish user registered event
     const event = await this.rabbitMQService.createEvent(
@@ -66,9 +60,7 @@ export class AuthService implements OnModuleInit {
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: loginDto.email },
-    });
+    const user = await this.authRepository.findUserByEmail(loginDto.email);
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -83,13 +75,11 @@ export class AuthService implements OnModuleInit {
     // Generate a simple session token
     const token = this.generateToken();
     
-    const session = await this.prisma.session.create({
-      data: {
-        userId: user.id,
-        token,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      },
-    });
+    const session = await this.authRepository.createSession(
+      user.id,
+      token,
+      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    );
 
     // Publish user logged in event
     const event = await this.rabbitMQService.createEvent(
@@ -114,10 +104,7 @@ export class AuthService implements OnModuleInit {
   }
 
   async validateToken(token: string) {
-    const session = await this.prisma.session.findUnique({
-      where: { token },
-      include: { user: true },
-    });
+    const session = await this.authRepository.findSessionByToken(token);
 
     if (!session || session.expiresAt < new Date()) {
       return null;
@@ -127,9 +114,7 @@ export class AuthService implements OnModuleInit {
   }
 
   async logout(token: string) {
-    const session = await this.prisma.session.findUnique({
-      where: { token },
-    });
+    const session = await this.authRepository.findSessionByToken(token);
 
     if (session) {
       // Publish user logged out event
@@ -144,9 +129,7 @@ export class AuthService implements OnModuleInit {
       await this.rabbitMQService.publishEvent(event);
     }
 
-    await this.prisma.session.deleteMany({
-      where: { token },
-    });
+    await this.authRepository.deleteSessionsByToken(token);
   }
 
   private generateToken(): string {
