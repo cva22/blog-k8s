@@ -24,23 +24,28 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
   
+  const logger = new AppLogger();
+  logger.setContext('Bootstrap');
+  
   // Start RMQ microservice listener for post.create events
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [process.env.RABBITMQ_URL || 'amqp://admin:admin@localhost:5672'],
-      queue: 'posts_events_queue',
-      queueOptions: { durable: true },
-    },
-  });
-  await app.startAllMicroservices();
+  try {
+    app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.RMQ,
+      options: {
+        urls: [process.env.RABBITMQ_URL || 'amqp://admin:admin@localhost:5672'],
+        queue: 'posts_events_queue',
+        queueOptions: { durable: true },
+      },
+    });
+    await app.startAllMicroservices();
+    logger.logServiceCall('posts', 'RabbitMQ microservice connected successfully');
+  } catch (error: any) {
+    logger.logServiceCall('posts', `Warning: Failed to connect to RabbitMQ microservice: ${error?.message}. HTTP server will still start.`);
+  }
 
   const port = process.env.PORT || 3002;
   await app.listen(port);
-  
-  // Use logger instead of console.log
-  const logger = new AppLogger();
-  logger.setContext('Bootstrap');
+
   logger.logServiceCall('posts', `Posts service is running on port ${port}`);
 }
 bootstrap();
