@@ -14,7 +14,10 @@ import { ClientsModule, Transport } from "@nestjs/microservices";
             process.env.RABBITMQ_URL || "amqp://admin:admin@localhost:5672",
           ],
           queue: "posts_events_queue",
-          queueOptions: { durable: true },
+          persistent: true,
+          socketOptions: {
+            noDelay: true,
+          },
         },
       },
       {
@@ -25,7 +28,10 @@ import { ClientsModule, Transport } from "@nestjs/microservices";
             process.env.RABBITMQ_URL || "amqp://admin:admin@localhost:5672",
           ],
           queue: "comments_events_queue",
-          queueOptions: { durable: true },
+          persistent: true,
+          socketOptions: {
+            noDelay: true,
+          },
         },
       },
     ]),

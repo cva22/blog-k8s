@@ -78,6 +78,21 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
 
       this.logger.log('RabbitMQ publisher connected successfully');
       
+      // Handle channel errors
+      amqpChannel.on('error', (error) => {
+        this.logger.error('RabbitMQ publisher channel error:', error);
+        if (this.publisherConnection) {
+          this.publisherConnection.isConnected = false;
+        }
+      });
+
+      amqpChannel.on('close', () => {
+        this.logger.warn('RabbitMQ publisher channel closed');
+        if (this.publisherConnection) {
+          this.publisherConnection.isConnected = false;
+        }
+      });
+
       // Handle connection errors
       amqpConnection.on('error', (error) => {
         this.logger.error('RabbitMQ publisher connection error:', error);
@@ -161,6 +176,17 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
         return false;
       }
       
+      // Check if channel is still valid before publishing
+      if (connection.channel === null || connection.channel === undefined) {
+        this.logger.warn('Channel is null, reconnecting...');
+        this.publisherConnection = null;
+        const newConnection = await this.ensurePublisherConnection();
+        if (!newConnection.channel) {
+          this.logger.error('Failed to reestablish publisher connection');
+          return false;
+        }
+      }
+      
       const key = routingKey || event.type;
       const message = Buffer.from(JSON.stringify(event));
       
@@ -188,6 +214,11 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
         return false;
       }
     } catch (error: any) {
+      // If error is a channel error, reset connection
+      if (error.code === 406 || error.message?.includes('PRECONDITION_FAILED')) {
+        this.logger.warn('Channel error detected, resetting publisher connection');
+        this.publisherConnection = null;
+      }
       this.logger.error(`Error publishing event ${event.type}:`, error.message);
       return false;
     }

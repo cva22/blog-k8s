@@ -34,7 +34,14 @@ async function bootstrap() {
       options: {
         urls: [process.env.RABBITMQ_URL || 'amqp://admin:admin@localhost:5672'],
         queue: 'posts_events_queue',
-        queueOptions: { durable: true },
+        queueOptions: {
+          durable: true,
+        },
+        socketOptions: {
+          noDelay: true,
+        },
+        noAck: false,
+        prefetchCount: 10,
       },
     });
     await app.startAllMicroservices();
