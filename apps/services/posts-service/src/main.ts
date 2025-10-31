@@ -4,14 +4,25 @@ import { AppModule } from './app.module';
 import { RequestIdMiddleware } from '@blog/shared-middleware';
 import { AppLogger } from '@blog/shared-logger';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   
   // Add request ID middleware
   app.use(RequestIdMiddleware);
+  
+  // Swagger setup
+  const config = new DocumentBuilder()
+    .setTitle('Posts Service API')
+    .setDescription('Posts management service API documentation')
+    .setVersion('1.0')
+    .addTag('posts')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
   
   // Start RMQ microservice listener for post.create events
   app.connectMicroservice<MicroserviceOptions>({
@@ -31,6 +42,7 @@ async function bootstrap() {
   const logger = new AppLogger();
   logger.setContext('Bootstrap');
   logger.logServiceCall('posts', `Posts service is running on port ${port}`);
+  logger.logServiceCall('posts', `Swagger documentation available at http://localhost:${port}/api`);
 }
 bootstrap();
 

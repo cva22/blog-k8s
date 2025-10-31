@@ -1,10 +1,13 @@
 import { Controller, Post, Body, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { TokenDto } from './dto/token.dto';
 import { AppLogger } from '@blog/shared-logger';
 import { createRequestContext } from '@blog/shared-middleware';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -15,6 +18,10 @@ export class AuthController {
   }
 
   @Post('register')
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiResponse({ status: 201, description: 'User successfully registered' })
+  @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
+  @ApiResponse({ status: 409, description: 'User already exists' })
   async register(@Body() registerDto: RegisterDto, @Request() req: any) {
     const ctx = createRequestContext(req);
     this.appLogger.log(ctx, 'User registration attempt', { email: registerDto.email });
@@ -30,6 +37,9 @@ export class AuthController {
   }
 
   @Post('login')
+  @ApiOperation({ summary: 'Login user' })
+  @ApiResponse({ status: 200, description: 'User successfully logged in' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Body() loginDto: LoginDto, @Request() req: any) {
     const ctx = createRequestContext(req);
     this.appLogger.log(ctx, 'User login attempt', { email: loginDto.email });
@@ -45,12 +55,15 @@ export class AuthController {
   }
 
   @Post('validate')
-  async validate(@Body('token') token: string, @Request() req: any) {
+  @ApiOperation({ summary: 'Validate authentication token' })
+  @ApiBody({ type: TokenDto })
+  @ApiResponse({ status: 200, description: 'Token validation result' })
+  async validate(@Body() tokenDto: TokenDto, @Request() req: any) {
     const ctx = createRequestContext(req);
     this.appLogger.log(ctx, 'Token validation attempt');
     
     try {
-      const user = await this.authService.validateToken(token);
+      const user = await this.authService.validateToken(tokenDto.token);
       this.appLogger.log(ctx, 'Token validation completed', { valid: !!user });
       return { valid: !!user, user };
     } catch (error) {
@@ -60,12 +73,15 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(@Body('token') token: string, @Request() req: any) {
+  @ApiOperation({ summary: 'Logout user' })
+  @ApiBody({ type: TokenDto })
+  @ApiResponse({ status: 200, description: 'User successfully logged out' })
+  async logout(@Body() tokenDto: TokenDto, @Request() req: any) {
     const ctx = createRequestContext(req);
     this.appLogger.log(ctx, 'User logout attempt');
     
     try {
-      await this.authService.logout(token);
+      await this.authService.logout(tokenDto.token);
       this.appLogger.log(ctx, 'User logged out successfully');
       return { message: 'Logged out successfully' };
     } catch (error) {
