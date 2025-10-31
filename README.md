@@ -38,31 +38,26 @@ A blog application built with **event-driven microservices architecture** using 
 ### Microservices
 
 1. **Auth Service** (Port 3001)
-
    - User authentication and session management
    - Publishes: `user.registered`, `user.logged_in`, `user.logged_out`
    - Database: PostgreSQL (Port 5433)
 
 2. **Posts Service** (Port 3002)
-
    - Blog post management
    - Publishes: `post.created`, `post.updated`, `post.deleted`, `post.published`
    - Database: PostgreSQL (Port 5434)
 
 3. **Comments Service** (Port 3003)
-
    - Comment management for posts
    - Publishes: `comment.created`, `comment.updated`, `comment.deleted`
    - Database: PostgreSQL (Port 5435)
 
 4. **Moderation Service** (Port 3004)
-
    - Content moderation
    - Publishes: `content.flagged`, `content.approved`, `content.rejected`
    - Database: PostgreSQL (Port 5436)
 
 5. **Query Service** (Port 3005)
-
    - Data aggregation with intelligent caching
    - Publishes: `cache.invalidated`
    - Uses event-driven cache invalidation
@@ -71,10 +66,26 @@ A blog application built with **event-driven microservices architecture** using 
    - Next.js frontend application
    - Consumes aggregated data from Query Service
 
+### Ports Map
+
+| Component                | Port  |
+| ------------------------ | ----- |
+| Web App (Next.js)        | 3000  |
+| Auth Service             | 3001  |
+| Posts Service            | 3002  |
+| Comments Service         | 3003  |
+| Moderation Service       | 3004  |
+| Query Service            | 3005  |
+| RabbitMQ (AMQP)          | 5672  |
+| RabbitMQ Management      | 15672 |
+| Auth DB (Postgres)       | 5433  |
+| Posts DB (Postgres)      | 5434  |
+| Comments DB (Postgres)   | 5435  |
+| Moderation DB (Postgres) | 5436  |
+
 ### Infrastructure
 
 - **RabbitMQ** (Port 5672)
-
   - Message broker for event-driven communication
   - Management UI: http://localhost:15672 (admin/admin)
   - Dead letter queues for failed message handling
@@ -114,6 +125,69 @@ A blog application built with **event-driven microservices architecture** using 
 ### Cache Events
 
 - `cache.invalidated` → Notifies query service of cache changes
+
+## 🧭 How workflows behave
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Web as Web App (3000)
+  participant Posts as Posts Service (3002)
+  participant MQ as RabbitMQ (5672)
+  participant Mod as Moderation (3004)
+  participant Query as Query (3005)
+
+  Web->>Posts: POST /posts
+  Posts-->>Posts: Save post in Posts DB (5434)
+  Posts->>MQ: Publish post.created
+  MQ-->>Mod: Deliver post.created
+  MQ-->>Query: Deliver post.created
+  Mod-->>Mod: Optional: enqueue review/flag
+  Query-->>Query: Invalidate post cache
+  Note over Query: Future GETs will refetch fresh data
+```
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Web as Web App (3000)
+  participant Comments as Comments Service (3003)
+  participant MQ as RabbitMQ (5672)
+  participant Posts as Posts Service (3002)
+  participant Mod as Moderation (3004)
+  participant Query as Query (3005)
+
+  Web->>Comments: POST /comments
+  Comments-->>Comments: Save comment in Comments DB (5435)
+  Comments->>MQ: Publish comment.created
+  MQ-->>Posts: Deliver comment.created
+  MQ-->>Mod: Deliver comment.created
+  MQ-->>Query: Deliver comment.created
+  Posts-->>Posts: Optional: update counters/state
+  Mod-->>Mod: Optional: review/auto-flag
+  Query-->>Query: Invalidate comments cache for post
+```
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Web as Web App (3000)
+  participant Query as Query (3005)
+  participant Posts as Posts (3002)
+  participant Comments as Comments (3003)
+
+  Web->>Query: GET /query/post/:id
+  alt Cache hit
+    Query-->>Web: Return cached post + comments
+  else Cache miss
+    Query->>Posts: GET /posts/:id
+    Posts-->>Query: Post JSON
+    Query->>Comments: GET /comments?postId=:id
+    Comments-->>Query: Comments JSON
+    Query-->>Web: Aggregated post + comments
+    Query-->>Query: Cache results for future requests
+  end
+```
 
 ## 🚀 Getting Started
 
@@ -155,18 +229,23 @@ make dev
 - **Query Service**: http://localhost:3005
 - **RabbitMQ Management**: http://localhost:15672 (admin/admin)
 
+### Query API quick reference
+
+- GET `http://localhost:3005/query/post/:id` → Aggregated post with comments (cached)
+- GET `http://localhost:3005/query/posts` → All published posts with comments (fresh fetch)
+- POST `http://localhost:3005/query/cache/invalidate { cacheKey?: string }` → Manual invalidation
+- GET `http://localhost:3005/query/cache/stats` → Cache keys and sizes
+
 ## 🔧 Development
 
 ### Event-Driven Development
 
 1. **Adding New Events**:
-
    - Define event types in `shared/rabbitmq/src/events/event.types.ts`
    - Update event routing configuration
    - Implement event handlers in relevant services
 
 2. **Service Communication**:
-
    - Use RabbitMQ events for cross-service communication
    - Keep HTTP calls minimal (only for direct data fetching)
    - Implement event handlers for reactive updates
