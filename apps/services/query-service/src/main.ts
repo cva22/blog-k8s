@@ -29,7 +29,6 @@ async function bootstrap() {
   const logger = new AppLogger();
   logger.setContext('Bootstrap');
   logger.logServiceCall('query', `Query service is running on port ${port}`);
-  logger.logServiceCall('query', `Swagger documentation available at http://localhost:${port}/api`);
 }
 bootstrap();
 

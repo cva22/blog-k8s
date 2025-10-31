@@ -28,9 +28,5 @@ async function bootstrap() {
   const logger = new AppLogger();
   logger.setContext("Bootstrap");
   logger.logServiceCall("event", `Event service is running on port ${port}`);
-  logger.logServiceCall(
-    "event",
-    `Swagger documentation available at http://localhost:${port}/api`,
-  );
 }
 bootstrap();

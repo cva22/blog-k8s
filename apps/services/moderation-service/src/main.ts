@@ -30,7 +30,6 @@ async function bootstrap() {
   const logger = new AppLogger();
   logger.setContext('Bootstrap');
   logger.logServiceCall('moderation', `Moderation service is running on port ${port}`);
-  logger.logServiceCall('moderation', `Swagger documentation available at http://localhost:${port}/api`);
 }
 bootstrap();
 
